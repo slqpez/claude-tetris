@@ -1,0 +1,86 @@
+name: Claude Issue Triage
+
+on:
+  issues:
+    types: [opened, edited]
+
+jobs:
+  triage:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write
+      id-token: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Run Claude Issue Triage
+        id: claude-triage
+        uses: anthropics/claude-code-action@v1
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+
+          claude_args: |
+            --allowed-tools "Bash(gh label list:*),Bash(gh label create:*),Bash(gh issue view:*),Bash(gh issue edit:*),Bash(gh issue comment:*)"
+
+          prompt: |
+            Eres un asistente de triaje de issues para el repositorio ${{ github.repository }}.
+            Analiza el issue #${{ github.event.issue.number }} y realiza las siguientes acciones EN ORDEN:
+
+            1. Lee el issue completo (título y cuerpo) con:
+               gh issue view ${{ github.event.issue.number }} --repo ${{ github.repository }}
+
+            2. Lista los labels disponibles en el repositorio con:
+               gh label list --repo ${{ github.repository }}
+
+            3. Elige uno o varios labels apropiados para este issue según su contenido
+               (por ejemplo: bug, enhancement, documentation, question, etc.).
+               Si NINGUNO de los labels existentes encaja bien, crea uno nuevo coherente
+               con el proyecto usando:
+               gh label create "<nombre-en-minusculas>" --repo ${{ github.repository }} --color "<hex>" --description "<descripcion corta>"
+               y luego úsalo.
+
+            4. Aplica el/los label(s) elegidos al issue con:
+               gh issue edit ${{ github.event.issue.number }} --repo ${{ github.repository }} --add-label "<label1>,<label2>"
+
+            5. Redacta y publica UN SOLO comentario de diagnóstico en ESPAÑOL con:
+               gh issue comment ${{ github.event.issue.number }} --repo ${{ github.repository }} --body "..."
+
+               El comentario debe tener exactamente estas secciones en Markdown:
+
+               ## Diagnóstico
+
+               **Resumen**
+               (breve resumen del problema o solicitud planteada en el issue)
+
+               **Causa probable / área afectada**
+               (análisis de qué parte del comportamiento del juego podría estar involucrada)
+
+               **Archivos afectados**
+               (indica cuáles de los siguientes archivos son relevantes y por qué: `game.js`
+               —donde vive toda la lógica del juego (tablero, piezas, colisiones, loop, scoring)—,
+               `index.html` o `style.css`. Este proyecto es Tetris vanilla sin build step: todo
+               vive en esos tres archivos.)
+
+               **Enfoque de solución sugerido**
+               (pasos de alto nivel para abordar el issue, sin implementar código todavía;
+               esto servirá de base para una implementación posterior)
+
+            Contexto del proyecto (para tu análisis, no lo repitas literalmente en el comentario):
+            Es una implementación de Tetris en HTML/CSS/JS vanilla sin dependencias ni build step.
+            El estado del juego vive en variables de módulo en game.js (board, current, next,
+            score, lines, level, paused, gameOver, dropInterval). El tablero es una matriz
+            ROWS x COLS con 0 = vacío o 1-7 = color de pieza fija. El renderizado es Canvas 2D
+            (draw() y drawNext()), redibujando todo cada frame.
+
+            Restricciones importantes:
+            - NO edites el título ni el cuerpo del issue.
+            - NO modifiques ningún archivo del código del repositorio.
+            - NO implementes la solución, solo diagnostica.
+            - Si el issue ya tiene un comentario de diagnóstico tuyo previo (por ejemplo,
+              porque este workflow ya corrió al editarse el issue), evita duplicar
+              información innecesariamente: puedes publicar un comentario actualizado
+              que reemplace en contenido al anterior.
