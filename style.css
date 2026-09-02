@@ -58,13 +58,39 @@ body {
   position: relative;
 }
 
+/* ---- Top bar ---- */
+.top-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 10px;
+}
+
 /* ---- Theme toggle ---- */
 .theme-toggle {
   display: flex;
   align-items: center;
   justify-content: flex-end;
   gap: 8px;
-  margin-bottom: 10px;
+}
+
+/* ---- Skin toggle ---- */
+.skin-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.skin-select {
+  background: var(--kbd-bg);
+  border: 1px solid var(--kbd-border);
+  color: var(--kbd-color);
+  border-radius: 4px;
+  padding: 3px 6px;
+  font-size: 11px;
+  font-family: inherit;
+  cursor: pointer;
 }
 
 .theme-label {
@@ -255,4 +281,290 @@ kbd {
 
 #restart-btn:hover {
   background: #9bbdff;
+}
+
+/* ---- Pause menu ---- */
+.pause-box {
+  min-width: 220px;
+}
+
+#pause-title {
+  font-size: 28px;
+  font-weight: 800;
+  letter-spacing: 4px;
+  color: var(--title-color);
+}
+
+.pause-menu {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 100%;
+  margin-top: 4px;
+}
+
+.menu-btn {
+  background: var(--kbd-bg);
+  color: var(--fg);
+  border: 1px solid var(--board-border);
+  border-radius: 6px;
+  padding: 10px 28px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  letter-spacing: 1px;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.menu-btn:hover {
+  background: var(--title-color);
+  border-color: var(--title-color);
+  color: #0f0f17;
+}
+
+.pause-level-select {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 8px 4px 0;
+}
+
+.pause-level-select label {
+  font-size: 10px;
+  letter-spacing: 1px;
+  color: var(--label-color);
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.pause-level-select select {
+  background: var(--kbd-bg);
+  color: var(--fg);
+  border: 1px solid var(--board-border);
+  border-radius: 4px;
+  padding: 4px 8px;
+  font-size: 13px;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.pause-controls-panel {
+  margin-top: 4px;
+  padding-top: 12px;
+  border-top: 1px solid var(--board-border);
+  width: 100%;
+}
+
+.pause-controls-panel.hidden {
+  display: none;
+}
+
+.pause-controls-panel ul {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.pause-controls-panel li {
+  font-size: 12px;
+  color: var(--controls-color);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* ---- Records ---- */
+.records-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  counter-reset: rank;
+}
+
+.records-list li {
+  counter-increment: rank;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 12px;
+  color: var(--controls-color);
+}
+
+.records-list li::before {
+  content: counter(rank) ".";
+  color: var(--label-color);
+  width: 14px;
+  flex-shrink: 0;
+}
+
+.records-list li .rec-name {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.records-list li .rec-score {
+  font-weight: 700;
+  color: var(--value-color);
+}
+
+.records-list li.empty {
+  color: var(--label-color);
+  font-style: italic;
+}
+
+.records-list li.highlight {
+  color: #101018;
+  background: linear-gradient(90deg, #ffd54f, #ffb74d);
+  border-radius: 4px;
+  padding: 2px 4px;
+  animation: glow 1.4s ease-in-out infinite;
+}
+
+.records-list li.highlight .rec-score {
+  color: #101018;
+}
+
+@keyframes glow {
+  0%, 100% { box-shadow: 0 0 4px rgba(255, 213, 79, 0.4); }
+  50% { box-shadow: 0 0 12px rgba(255, 213, 79, 0.9); }
+}
+
+.records-stats {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 11px;
+  color: var(--controls-color);
+}
+
+.records-stats b {
+  color: var(--value-color);
+}
+
+.reset-btn {
+  margin-top: 4px;
+  background: transparent;
+  color: var(--controls-color);
+  border: 1px solid var(--kbd-border);
+  border-radius: 6px;
+  padding: 6px 10px;
+  font-size: 11px;
+  cursor: pointer;
+  letter-spacing: 0.5px;
+  transition: border-color 0.15s, color 0.15s;
+}
+
+.reset-btn:hover {
+  border-color: var(--overlay-title-color);
+  color: var(--overlay-title-color);
+}
+
+#overlay-score.highlight {
+  color: #ffd54f;
+  font-weight: 700;
+}
+
+#overlay-run-stats {
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 12px;
+  color: var(--controls-color);
+}
+
+.name-entry {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.name-entry.hidden {
+  display: none;
+}
+
+.new-record-label {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  color: #ffd54f;
+}
+
+#player-name {
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 14px;
+  letter-spacing: 2px;
+  text-align: center;
+  text-transform: uppercase;
+  background: var(--board-bg);
+  border: 1px solid var(--board-border);
+  border-radius: 6px;
+  color: var(--fg);
+  padding: 8px 10px;
+  width: 160px;
+}
+
+#save-score-btn {
+  background: #7aa2f7;
+  color: #0f0f17;
+  border: none;
+  border-radius: 6px;
+  padding: 8px 20px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  letter-spacing: 1px;
+  transition: background 0.15s;
+}
+
+#save-score-btn:hover {
+  background: #9bbdff;
+}
+
+#overlay-records-list {
+  width: 200px;
+}
+
+/* ---- Skins ---- */
+/* Placed after the theme block so a skin's look wins over light/dark mode. */
+
+body.skin-neon {
+  --bg: #000000;
+  --board-bg: #000000;
+  --board-border: #0ff3;
+  --board-shadow: rgba(0, 255, 255, 0.35);
+  --grid-color: #0a2a2a;
+  --title-color: #0ff;
+  --value-color: #ff2fd0;
+  --overlay-title-color: #0ff;
+}
+
+body.skin-pastel {
+  --board-bg: #fff7f2;
+  --board-border: #f0d9e6;
+  --board-shadow: rgba(190, 160, 200, 0.35);
+  --grid-color: #f2e4ee;
+  --title-color: #f2a3c4;
+  --value-color: #a3c9f2;
+  --overlay-title-color: #f28ba3;
+}
+
+body.skin-pastel #board,
+body.skin-pastel #next-canvas {
+  border-radius: 16px;
+}
+
+body.skin-pixelart {
+  --title-color: #ffd54f;
+  --value-color: #81c784;
+}
+
+body.skin-pixelart #board,
+body.skin-pixelart #next-canvas {
+  border-radius: 0;
+  image-rendering: pixelated;
 }

@@ -8,12 +8,23 @@
 </head>
 <body>
   <div class="wrapper">
-    <div class="theme-toggle">
-      <span class="theme-label">MODO CLARO</span>
-      <label class="switch" for="theme-switch">
-        <input type="checkbox" id="theme-switch" />
-        <span class="slider"></span>
-      </label>
+    <div class="top-bar">
+      <div class="skin-toggle">
+        <span class="theme-label">SKIN</span>
+        <select id="skin-select" class="skin-select">
+          <option value="retro">Retro</option>
+          <option value="neon">Neon</option>
+          <option value="pastel">Pastel</option>
+          <option value="pixelart">Pixel Art</option>
+        </select>
+      </div>
+      <div class="theme-toggle">
+        <span class="theme-label">MODO CLARO</span>
+        <label class="switch" for="theme-switch">
+          <input type="checkbox" id="theme-switch" />
+          <span class="slider"></span>
+        </label>
+      </div>
     </div>
     <h1 class="game-title">TETRIS</h1>
     <div class="game-container">
@@ -55,6 +66,16 @@
             <li>Cada 5 líneas aparece un bloque especial (B/L/D/G/F) con un efecto aleatorio.</li>
           </ul>
         </div>
+
+        <div class="panel-section records">
+          <span class="label">RECORDS</span>
+          <ol id="records-list" class="records-list"></ol>
+          <div class="records-stats">
+            <span>Mejor combo: <b id="best-combo-stat">0</b></span>
+            <span>Líneas máx: <b id="max-lines-stat">0</b></span>
+          </div>
+          <button id="reset-records-btn" class="reset-btn">Resetear récords</button>
+        </div>
       </aside>
     </div>
 
@@ -62,7 +83,55 @@
       <div class="overlay-box">
         <p id="overlay-title">GAME OVER</p>
         <p id="overlay-score"></p>
+        <p id="overlay-run-stats"></p>
+
+        <div id="name-entry" class="name-entry hidden">
+          <p class="new-record-label">¡Nuevo récord!</p>
+          <input type="text" id="player-name" maxlength="10" placeholder="TU NOMBRE" autocomplete="off" />
+          <button id="save-score-btn">Guardar</button>
+        </div>
+
+        <ol id="overlay-records-list" class="records-list"></ol>
+
         <button id="restart-btn">Reiniciar</button>
+      </div>
+    </div>
+
+    <div id="pause-overlay" class="overlay hidden">
+      <div class="overlay-box pause-box">
+        <p id="pause-title">PAUSA</p>
+
+        <div class="pause-menu">
+          <button id="resume-btn" class="menu-btn">Reanudar</button>
+          <button id="pause-restart-btn" class="menu-btn">Reiniciar</button>
+          <button id="view-controls-btn" class="menu-btn">Ver controles</button>
+
+          <div class="pause-level-select">
+            <label for="start-level">Nivel inicial</label>
+            <select id="start-level">
+              <option value="1">1</option>
+              <option value="2">2</option>
+              <option value="3">3</option>
+              <option value="4">4</option>
+              <option value="5">5</option>
+              <option value="6">6</option>
+              <option value="7">7</option>
+              <option value="8">8</option>
+              <option value="9">9</option>
+              <option value="10">10</option>
+            </select>
+          </div>
+        </div>
+
+        <div id="pause-controls-panel" class="pause-controls-panel hidden">
+          <ul>
+            <li><kbd>←</kbd><kbd>→</kbd> mover</li>
+            <li><kbd>↑</kbd> rotar</li>
+            <li><kbd>↓</kbd> bajar</li>
+            <li><kbd>Space</kbd> caída</li>
+            <li><kbd>P</kbd> <kbd>Esc</kbd> pausa</li>
+          </ul>
+        </div>
       </div>
     </div>
   </div>
