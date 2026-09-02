@@ -4,6 +4,8 @@ const COLS = 10;
 const ROWS = 20;
 const BLOCK = 30;
 
+const WILDCARD = 8;
+
 const COLORS = [
   null,
   '#4dd0e1', // I - cyan
@@ -13,6 +15,7 @@ const COLORS = [
   '#e57373', // Z - red
   '#90caf9', // J - pale blue
   '#ffb74d', // L - orange
+  '#f5f5f5', // wildcard - created by the DYE power-up
 ];
 
 const PIECES = [
@@ -28,6 +31,19 @@ const PIECES = [
 
 const LINE_SCORES = [0, 100, 300, 500, 800];
 
+// ---- Power-ups ----
+const POWERUP_LINE_INTERVAL = 5; // lines cleared between special pieces
+const FREEZE_DURATION = 5000;    // ms
+
+const POWERUP_TYPES = {
+  BOMB:      { letter: 'B', color: '#ff5252' },
+  LIGHTNING: { letter: 'L', color: '#ffee58' },
+  DYE:       { letter: 'D', color: '#ba68c8' },
+  GRAVITY:   { letter: 'G', color: '#66bb6a' },
+  FREEZE:    { letter: 'F', color: '#4fc3f7' },
+};
+const POWERUP_KEYS = Object.keys(POWERUP_TYPES);
+
 const canvas = document.getElementById('board');
 const ctx = canvas.getContext('2d');
 const nextCanvas = document.getElementById('next-canvas');
@@ -42,6 +58,7 @@ const restartBtn = document.getElementById('restart-btn');
 const themeSwitch = document.getElementById('theme-switch');
 
 let board, current, next, score, lines, level, paused, gameOver, lastTime, dropAccum, dropInterval, animId;
+let linesSincePowerUp, powerUpQueued, freezeUntil;
 
 const THEME_KEY = 'tetris-theme';
 
@@ -73,6 +90,19 @@ function randomPiece() {
   const type = Math.floor(Math.random() * 7) + 1;
   const shape = PIECES[type].map(row => [...row]);
   return { type, shape, x: Math.floor(COLS / 2) - Math.floor(shape[0].length / 2), y: 0 };
+}
+
+function randomPowerUpPiece() {
+  const powerUpType = POWERUP_KEYS[Math.floor(Math.random() * POWERUP_KEYS.length)];
+  const shape = [[1]];
+  return {
+    type: 0,
+    shape,
+    x: Math.floor(COLS / 2) - Math.floor(shape[0].length / 2),
+    y: 0,
+    isPowerUp: true,
+    powerUpType,
+  };
 }
 
 function collide(shape, ox, oy) {
@@ -131,7 +161,77 @@ function clearLines() {
     score += (LINE_SCORES[cleared] || 0) * level;
     level = Math.floor(lines / 10) + 1;
     dropInterval = Math.max(100, 1000 - (level - 1) * 90);
+    linesSincePowerUp += cleared;
+    if (linesSincePowerUp >= POWERUP_LINE_INTERVAL) {
+      powerUpQueued = true;
+      linesSincePowerUp -= POWERUP_LINE_INTERVAL;
+    }
     updateHUD();
+  }
+}
+
+// ---- PowerUps manager ----
+// Each function mutates `board` directly, mirroring the merge()/clearLines() pattern.
+
+function explodeBomb(x, y) {
+  for (let r = y - 1; r <= y + 1; r++) {
+    if (r < 0 || r >= ROWS) continue;
+    for (let c = x - 1; c <= x + 1; c++) {
+      if (c < 0 || c >= COLS) continue;
+      board[r][c] = 0;
+    }
+  }
+}
+
+function strikeLightning(x, y) {
+  if (y >= 0 && y < ROWS) board[y].fill(0);
+  if (x >= 0 && x < COLS) {
+    for (let r = 0; r < ROWS; r++) board[r][x] = 0;
+  }
+}
+
+function applyDye() {
+  const counts = new Array(COLORS.length).fill(0);
+  for (let r = 0; r < ROWS; r++)
+    for (let c = 0; c < COLS; c++) {
+      const v = board[r][c];
+      if (v && v !== WILDCARD) counts[v]++;
+    }
+  let bestColor = 0, bestCount = 0;
+  for (let i = 1; i < counts.length; i++) {
+    if (counts[i] > bestCount) { bestCount = counts[i]; bestColor = i; }
+  }
+  if (!bestColor) return;
+  for (let r = 0; r < ROWS; r++)
+    for (let c = 0; c < COLS; c++)
+      if (board[r][c] === bestColor) board[r][c] = WILDCARD;
+}
+
+function applyGravity() {
+  for (let c = 0; c < COLS; c++) {
+    const values = [];
+    for (let r = 0; r < ROWS; r++) {
+      if (board[r][c]) values.push(board[r][c]);
+    }
+    for (let r = ROWS - 1; r >= 0; r--) {
+      board[r][c] = values.length ? values.pop() : 0;
+    }
+  }
+}
+
+function applyFreeze() {
+  freezeUntil = performance.now() + FREEZE_DURATION;
+}
+
+// Returns true when the effect altered the grid and lines should be re-evaluated.
+function applyPowerUp(type, x, y) {
+  switch (type) {
+    case 'BOMB': explodeBomb(x, y); return true;
+    case 'LIGHTNING': strikeLightning(x, y); return true;
+    case 'DYE': applyDye(); return true;
+    case 'GRAVITY': applyGravity(); return true;
+    case 'FREEZE': applyFreeze(); return false;
+    default: return false;
   }
 }
 
@@ -159,14 +259,24 @@ function softDrop() {
 }
 
 function lockPiece() {
-  merge();
-  clearLines();
+  if (current.isPowerUp) {
+    const gridChanged = applyPowerUp(current.powerUpType, current.x, current.y);
+    if (gridChanged) clearLines();
+  } else {
+    merge();
+    clearLines();
+  }
   spawn();
 }
 
 function spawn() {
   current = next;
-  next = randomPiece();
+  if (powerUpQueued) {
+    next = randomPowerUpPiece();
+    powerUpQueued = false;
+  } else {
+    next = randomPiece();
+  }
   if (collide(current.shape, current.x, current.y)) {
     endGame();
   }
@@ -188,6 +298,22 @@ function drawBlock(context, x, y, colorIndex, size, alpha) {
   // highlight
   context.fillStyle = 'rgba(255,255,255,0.12)';
   context.fillRect(x * size + 1, y * size + 1, size - 2, 4);
+  context.globalAlpha = 1;
+}
+
+function drawPowerUpBlock(context, x, y, powerUpType, size, alpha) {
+  const info = POWERUP_TYPES[powerUpType];
+  if (!info) return;
+  context.globalAlpha = alpha ?? 1;
+  context.fillStyle = info.color;
+  context.fillRect(x * size + 1, y * size + 1, size - 2, size - 2);
+  context.fillStyle = 'rgba(255,255,255,0.12)';
+  context.fillRect(x * size + 1, y * size + 1, size - 2, 4);
+  context.fillStyle = '#101018';
+  context.font = `bold ${Math.floor(size * 0.55)}px system-ui, sans-serif`;
+  context.textAlign = 'center';
+  context.textBaseline = 'middle';
+  context.fillText(info.letter, x * size + size / 2, y * size + size / 2 + 1);
   context.globalAlpha = 1;
 }
 
@@ -224,14 +350,19 @@ function draw() {
   // ghost
   const gy = ghostY();
   for (let r = 0; r < current.shape.length; r++)
-    for (let c = 0; c < current.shape[r].length; c++)
-      if (current.shape[r][c])
-        drawBlock(ctx, current.x + c, gy + r, current.shape[r][c], BLOCK, 0.2);
+    for (let c = 0; c < current.shape[r].length; c++) {
+      if (!current.shape[r][c]) continue;
+      if (current.isPowerUp) drawPowerUpBlock(ctx, current.x + c, gy + r, current.powerUpType, BLOCK, 0.2);
+      else drawBlock(ctx, current.x + c, gy + r, current.shape[r][c], BLOCK, 0.2);
+    }
 
   // current piece
   for (let r = 0; r < current.shape.length; r++)
-    for (let c = 0; c < current.shape[r].length; c++)
-      drawBlock(ctx, current.x + c, current.y + r, current.shape[r][c], BLOCK);
+    for (let c = 0; c < current.shape[r].length; c++) {
+      if (!current.shape[r][c]) continue;
+      if (current.isPowerUp) drawPowerUpBlock(ctx, current.x + c, current.y + r, current.powerUpType, BLOCK);
+      else drawBlock(ctx, current.x + c, current.y + r, current.shape[r][c], BLOCK);
+    }
 }
 
 function drawNext() {
@@ -241,8 +372,11 @@ function drawNext() {
   const offX = Math.floor((4 - shape[0].length) / 2);
   const offY = Math.floor((4 - shape.length) / 2);
   for (let r = 0; r < shape.length; r++)
-    for (let c = 0; c < shape[r].length; c++)
-      drawBlock(nextCtx, offX + c, offY + r, shape[r][c], NB);
+    for (let c = 0; c < shape[r].length; c++) {
+      if (!shape[r][c]) continue;
+      if (next.isPowerUp) drawPowerUpBlock(nextCtx, offX + c, offY + r, next.powerUpType, NB);
+      else drawBlock(nextCtx, offX + c, offY + r, shape[r][c], NB);
+    }
 }
 
 function endGame() {
@@ -268,15 +402,18 @@ function togglePause() {
 }
 
 function loop(ts) {
+  if (gameOver || paused) return;
   const dt = ts - lastTime;
   lastTime = ts;
-  dropAccum += dt;
-  if (dropAccum >= dropInterval) {
-    dropAccum = 0;
-    if (!collide(current.shape, current.x, current.y + 1)) {
-      current.y++;
-    } else {
-      lockPiece();
+  if (ts >= freezeUntil) {
+    dropAccum += dt;
+    if (dropAccum >= dropInterval) {
+      dropAccum = 0;
+      if (!collide(current.shape, current.x, current.y + 1)) {
+        current.y++;
+      } else {
+        lockPiece();
+      }
     }
   }
   draw();
@@ -293,6 +430,9 @@ function init() {
   dropInterval = 1000;
   dropAccum = 0;
   lastTime = performance.now();
+  linesSincePowerUp = 0;
+  powerUpQueued = false;
+  freezeUntil = 0;
   next = randomPiece();
   spawn();
   updateHUD();
