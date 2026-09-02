@@ -44,6 +44,31 @@ const POWERUP_TYPES = {
 };
 const POWERUP_KEYS = Object.keys(POWERUP_TYPES);
 
+// ---- Skins ----
+const SKINS = {
+  retro: {
+    label: 'Retro',
+    colors: COLORS,
+  },
+  neon: {
+    label: 'Neon',
+    colors: [null, '#00e5ff', '#ffea00', '#e040fb', '#00e676', '#ff1744', '#40c4ff', '#ff9100', '#ffffff'],
+    glow: true,
+  },
+  pastel: {
+    label: 'Pastel',
+    colors: [null, '#a8dadc', '#ffe8a3', '#d8bfd8', '#b5e6b5', '#ffb3ab', '#b8d4f0', '#ffd4a3', '#fdfaf5'],
+    rounded: true,
+  },
+  pixelart: {
+    label: 'Pixel Art',
+    colors: COLORS,
+    texture: true,
+  },
+};
+const SKIN_KEY = 'tetris-skin';
+let currentSkin = 'retro';
+
 const canvas = document.getElementById('board');
 const ctx = canvas.getContext('2d');
 const nextCanvas = document.getElementById('next-canvas');
@@ -71,6 +96,7 @@ const nameEntry = document.getElementById('name-entry');
 const playerNameInput = document.getElementById('player-name');
 const saveScoreBtn = document.getElementById('save-score-btn');
 const overlayRecordsList = document.getElementById('overlay-records-list');
+const skinSelect = document.getElementById('skin-select');
 
 let board, current, next, score, lines, level, paused, gameOver, lastTime, dropAccum, dropInterval, animId;
 let linesSincePowerUp, powerUpQueued, freezeUntil, combo, maxCombo;
@@ -216,6 +242,28 @@ themeSwitch.addEventListener('change', () => {
 });
 
 initTheme();
+
+function applySkin(skin) {
+  if (!SKINS[skin]) skin = 'retro';
+  currentSkin = skin;
+  document.body.classList.remove(...Object.keys(SKINS).map(k => `skin-${k}`));
+  document.body.classList.add(`skin-${skin}`);
+  skinSelect.value = skin;
+}
+
+function initSkin() {
+  const saved = localStorage.getItem(SKIN_KEY) || 'retro';
+  applySkin(saved);
+}
+
+skinSelect.addEventListener('change', () => {
+  applySkin(skinSelect.value);
+  localStorage.setItem(SKIN_KEY, skinSelect.value);
+  if (current) draw();
+  if (next) drawNext();
+});
+
+initSkin();
 
 function createBoard() {
   return Array.from({ length: ROWS }, () => new Array(COLS).fill(0));
@@ -432,26 +480,74 @@ function updateHUD() {
   levelEl.textContent = level;
 }
 
+function roundedRectPath(context, x, y, w, h, r) {
+  r = Math.max(0, Math.min(r, w / 2, h / 2));
+  context.beginPath();
+  if (context.roundRect) {
+    context.roundRect(x, y, w, h, r);
+  } else {
+    context.moveTo(x + r, y);
+    context.arcTo(x + w, y, x + w, y + h, r);
+    context.arcTo(x + w, y + h, x, y + h, r);
+    context.arcTo(x, y + h, x, y, r);
+    context.arcTo(x, y, x + w, y, r);
+    context.closePath();
+  }
+}
+
+function drawPixelTexture(context, px, py, s) {
+  const sub = s / 4;
+  context.fillStyle = 'rgba(0,0,0,0.18)';
+  for (let i = 0; i < 4; i++)
+    for (let j = 0; j < 4; j++)
+      if ((i + j) % 2 === 0) context.fillRect(px + i * sub, py + j * sub, sub, sub);
+  context.strokeStyle = 'rgba(0,0,0,0.35)';
+  context.lineWidth = 1;
+  context.strokeRect(px + 0.5, py + 0.5, s - 1, s - 1);
+}
+
+function paintSkinnedBlock(context, px, py, s, color, alpha) {
+  const skin = SKINS[currentSkin];
+  context.globalAlpha = alpha ?? 1;
+  context.save();
+  if (skin.glow) {
+    context.shadowColor = color;
+    context.shadowBlur = s * 0.6;
+  }
+  if (skin.rounded) {
+    roundedRectPath(context, px, py, s, s, s * 0.25);
+    context.fillStyle = color;
+    context.fill();
+  } else {
+    context.fillStyle = color;
+    context.fillRect(px, py, s, s);
+  }
+  context.restore();
+  // highlight
+  if (skin.rounded) {
+    roundedRectPath(context, px + 2, py + 2, s - 4, (s - 4) * 0.45, (s - 4) * 0.22);
+    context.fillStyle = 'rgba(255,255,255,0.2)';
+    context.fill();
+  } else {
+    context.fillStyle = 'rgba(255,255,255,0.12)';
+    context.fillRect(px, py, s, 4);
+  }
+  if (skin.texture) drawPixelTexture(context, px, py, s);
+  context.globalAlpha = 1;
+}
+
 function drawBlock(context, x, y, colorIndex, size, alpha) {
   if (!colorIndex) return;
-  const color = COLORS[colorIndex];
-  context.globalAlpha = alpha ?? 1;
-  context.fillStyle = color;
-  context.fillRect(x * size + 1, y * size + 1, size - 2, size - 2);
-  // highlight
-  context.fillStyle = 'rgba(255,255,255,0.12)';
-  context.fillRect(x * size + 1, y * size + 1, size - 2, 4);
-  context.globalAlpha = 1;
+  const skin = SKINS[currentSkin];
+  const color = skin.colors[colorIndex] || COLORS[colorIndex];
+  paintSkinnedBlock(context, x * size + 1, y * size + 1, size - 2, color, alpha);
 }
 
 function drawPowerUpBlock(context, x, y, powerUpType, size, alpha) {
   const info = POWERUP_TYPES[powerUpType];
   if (!info) return;
+  paintSkinnedBlock(context, x * size + 1, y * size + 1, size - 2, info.color, alpha);
   context.globalAlpha = alpha ?? 1;
-  context.fillStyle = info.color;
-  context.fillRect(x * size + 1, y * size + 1, size - 2, size - 2);
-  context.fillStyle = 'rgba(255,255,255,0.12)';
-  context.fillRect(x * size + 1, y * size + 1, size - 2, 4);
   context.fillStyle = '#101018';
   context.font = `bold ${Math.floor(size * 0.55)}px system-ui, sans-serif`;
   context.textAlign = 'center';

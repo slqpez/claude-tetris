@@ -8,12 +8,23 @@
 </head>
 <body>
   <div class="wrapper">
-    <div class="theme-toggle">
-      <span class="theme-label">MODO CLARO</span>
-      <label class="switch" for="theme-switch">
-        <input type="checkbox" id="theme-switch" />
-        <span class="slider"></span>
-      </label>
+    <div class="top-bar">
+      <div class="skin-toggle">
+        <span class="theme-label">SKIN</span>
+        <select id="skin-select" class="skin-select">
+          <option value="retro">Retro</option>
+          <option value="neon">Neon</option>
+          <option value="pastel">Pastel</option>
+          <option value="pixelart">Pixel Art</option>
+        </select>
+      </div>
+      <div class="theme-toggle">
+        <span class="theme-label">MODO CLARO</span>
+        <label class="switch" for="theme-switch">
+          <input type="checkbox" id="theme-switch" />
+          <span class="slider"></span>
+        </label>
+      </div>
     </div>
     <h1 class="game-title">TETRIS</h1>
     <div class="game-container">

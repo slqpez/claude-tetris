@@ -58,13 +58,39 @@ body {
   position: relative;
 }
 
+/* ---- Top bar ---- */
+.top-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 10px;
+}
+
 /* ---- Theme toggle ---- */
 .theme-toggle {
   display: flex;
   align-items: center;
   justify-content: flex-end;
   gap: 8px;
-  margin-bottom: 10px;
+}
+
+/* ---- Skin toggle ---- */
+.skin-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.skin-select {
+  background: var(--kbd-bg);
+  border: 1px solid var(--kbd-border);
+  color: var(--kbd-color);
+  border-radius: 4px;
+  padding: 3px 6px;
+  font-size: 11px;
+  font-family: inherit;
+  cursor: pointer;
 }
 
 .theme-label {
@@ -501,4 +527,44 @@ kbd {
 
 #overlay-records-list {
   width: 200px;
+}
+
+/* ---- Skins ---- */
+/* Placed after the theme block so a skin's look wins over light/dark mode. */
+
+body.skin-neon {
+  --bg: #000000;
+  --board-bg: #000000;
+  --board-border: #0ff3;
+  --board-shadow: rgba(0, 255, 255, 0.35);
+  --grid-color: #0a2a2a;
+  --title-color: #0ff;
+  --value-color: #ff2fd0;
+  --overlay-title-color: #0ff;
+}
+
+body.skin-pastel {
+  --board-bg: #fff7f2;
+  --board-border: #f0d9e6;
+  --board-shadow: rgba(190, 160, 200, 0.35);
+  --grid-color: #f2e4ee;
+  --title-color: #f2a3c4;
+  --value-color: #a3c9f2;
+  --overlay-title-color: #f28ba3;
+}
+
+body.skin-pastel #board,
+body.skin-pastel #next-canvas {
+  border-radius: 16px;
+}
+
+body.skin-pixelart {
+  --title-color: #ffd54f;
+  --value-color: #81c784;
+}
+
+body.skin-pixelart #board,
+body.skin-pixelart #next-canvas {
+  border-radius: 0;
+  image-rendering: pixelated;
 }
