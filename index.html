@@ -55,6 +55,16 @@
             <li>Cada 5 líneas aparece un bloque especial (B/L/D/G/F) con un efecto aleatorio.</li>
           </ul>
         </div>
+
+        <div class="panel-section records">
+          <span class="label">RECORDS</span>
+          <ol id="records-list" class="records-list"></ol>
+          <div class="records-stats">
+            <span>Mejor combo: <b id="best-combo-stat">0</b></span>
+            <span>Líneas máx: <b id="max-lines-stat">0</b></span>
+          </div>
+          <button id="reset-records-btn" class="reset-btn">Resetear récords</button>
+        </div>
       </aside>
     </div>
 
@@ -62,6 +72,16 @@
       <div class="overlay-box">
         <p id="overlay-title">GAME OVER</p>
         <p id="overlay-score"></p>
+        <p id="overlay-run-stats"></p>
+
+        <div id="name-entry" class="name-entry hidden">
+          <p class="new-record-label">¡Nuevo récord!</p>
+          <input type="text" id="player-name" maxlength="10" placeholder="TU NOMBRE" autocomplete="off" />
+          <button id="save-score-btn">Guardar</button>
+        </div>
+
+        <ol id="overlay-records-list" class="records-list"></ol>
+
         <button id="restart-btn">Reiniciar</button>
       </div>
     </div>
